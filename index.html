@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Chess Analysis Board</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-color: #222;
+  color: white;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, 80px);
+  grid-template-rows: repeat(8, 80px);
+  justify-content: center;
+  margin-top: 20px;
+  border: 4px solid #333;
+  transition: all 0.3s;
+}
+
+.square {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+}
+
+.light { background-color: #f0d9b5; }
+.dark { background-color: #b58863; }
+
+/* 🔥 Checkmate animation */
+@keyframes flash {
+  0% { box-shadow: 0 0 10px red; }
+  50% { box-shadow: 0 0 30px yellow; }
+  100% { box-shadow: 0 0 10px red; }
+}
+
+.checkmate {
+  animation: flash 0.5s infinite;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Chess Analysis Board</h1>
+<div class="board"></div>
+
+<script>
+// ================= BOARD =================
+const board = document.querySelector(".board");
+
+const pieces = [
+  "♜","♞","♝","♛","♚","♝","♞","♜",
+  "♟","♟","♟","♟","♟","♟","♟","♟",
+  "","","","","","","","",
+  "","","","","","","","",
+  "","","","","","","","",
+  "","","","","","","","",
+  "♙","♙","♙","♙","♙","♙","♙","♙",
+  "♖","♘","♗","♕","♔","♗","♘","♖"
+];
+
+for (let i = 0; i < 64; i++) {
+  const square = document.createElement("div");
+  square.classList.add("square");
+
+  const row = Math.floor(i / 8);
+  const col = i % 8;
+
+  if ((row + col) % 2 === 0) {
+    square.classList.add("light");
+  } else {
+    square.classList.add("dark");
+  }
+
+  if (pieces[i]) {
+    square.textContent = pieces[i];
+  }
+
+  board.appendChild(square);
+}
+
+// ================= STOCKFISH =================
+const engine = new Worker("https://cdn.jsdelivr.net/npm/stockfish/stockfish.js");
+
+engine.onmessage = function(event) {
+  const line = event.data;
+  console.log(line);
+
+  // detect mate
+  if (line.includes("score mate")) {
+    triggerCheckmate();
+  }
+
+  if (line.startsWith("bestmove")) {
+    console.log("Best move:", line);
+  }
+};
+
+// start engine
+engine.postMessage("uci");
+engine.postMessage("position startpos");
+engine.postMessage("go depth 12");
+
+// ================= ANIMATION =================
+function triggerCheckmate() {
+  board.classList.add("checkmate");
+
+  setTimeout(() => {
+    board.classList.remove("checkmate");
+  }, 3000);
+}
+</script>
+
+</body>
+</html>
